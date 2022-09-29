@@ -1,0 +1,92 @@
+-- 회원정보 테이블 - 아이디(PK), 비밀번호(NN), 이름(NN), 이메일(NN), 주소(NN) 적립금, 가입날짜, 권한(0 : 관리자, 1 : 일반회원, 2 : 가맹회원, 3 : 회원탈퇴, 4 : 회원정지, 5 : 가맹정지(탈퇴)) -- MEMBER_MANAGEMENT
+CREATE TABLE MEMBER_MANAGEMENT(
+	M_ID VARCHAR(20) PRIMARY KEY, -- 아이디
+	M_PW VARCHAR(30) NOT NULL, -- 비밀번호
+	M_NAME VARCHAR(20) NOT NULL, -- 이름
+	M_EMAIL VARCHAR(100) NOT NULL, -- 이메일
+	M_ADDR VARCHAR(200) NOT NULL, -- 주소
+	M_POINT INT DEFAULT 0, -- 적립금
+	M_DATE DATETIME DEFAULT SYSDATE(), -- 가입 날짜
+	M_STATE INT DEFAULT 1 -- 1 : 일반회원, 2 : 가맹회원, 3 : 회원탈퇴, 4 : 회원정지, 5 : 가맹정지(탈퇴), 9 : 관리자
+);
+
+-- 관리자 게시판(공지사항 & 이벤트) 테이블 - 인덱스(PK), 구분(0 : 공지사항, 1 : 이벤트, 2 : 자주하는 질문), 제목, 내용, 첨부파일, 작성날짜, 조회수, 상단고정(Y : 고정O, N : 고정X) -- ADMIN_BOARD
+CREATE TABLE ADMIN_BOARD(
+	A_INDEX INT AUTO_INCREMENT PRIMARY KEY, -- 인덱스
+	A_TYPE INT NOT NULL, -- 구분(0 : 공지사항, 1 : 이벤트, 2 : 자주하는 질문)
+	A_TITLE VARCHAR(100) NOT NULL, -- 제목
+	A_CONTENT VARCHAR(1000) NOT NULL, -- 내용
+	A_FILE VARCHAR(100), -- 첨부파일
+	A_DATE DATETIME DEFAULT SYSDATE(), -- 작성날짜
+	A_CNT INT DEFAULT 0, -- 조회수
+	A_FIX VARCHAR(2) DEFAULT 'N' -- 상단고정 유무(공지사항 & 이벤트 에서만 사용 할 것)
+);
+
+-- 1:1 문의 게시판 테이블 - 인덱스(PK), 문의 유형(0 : 주문/결제/반품/교환문의, 1 : 이벤트/적립금문의, 2 : 상품문의, 3 : 배송문의, 4 : 상품 누락 문의, 5 : 기타문의)(NN),
+--									 작성자(FK, NN), 제목(NN), 내용(NN), 첨부파일, 처리상태(0 : 미열람, 1 : 처리중, 2 : 답변완료), 작성날짜, 답변 내용, 답변 날짜
+CREATE TABLE USER_INQUIRY(
+	U_INDEX INT AUTO_INCREMENT PRIMARY KEY, -- 인덱스
+	U_TYPE INT NOT NULL, -- 문의 유형
+	U_ID VARCHAR(20) NOT NULL, -- 작성자
+	CONSTRAINT FK_U_ID FOREIGN KEY(U_ID) REFERENCES MEMBER_MANAGEMENT(M_ID),
+	U_TITLE VARCHAR(100) NOT NULL, -- 제목
+	U_CONTENT VARCHAR(2000) NOT NULL, -- 내용
+	U_FILE VARCHAR(100), -- 첨부파일
+	U_STATE INT DEFAULT 0, -- 처리상태(0 : 미열람, 1 : 처리중, 2 : 답변완료)
+	U_DATE DATETIME DEFAULT SYSDATE(), -- 작성날짜
+	U_RECONTENT VARCHAR(2000) DEFAULT NULL, -- 답변내용
+	U_REDATE DATETIME DEFAULT NULL -- 답변날짜
+);
+
+-- 품목 카테고리 테이블 - 카테고리명(PK)
+CREATE TABLE category_management(
+   C_NAME VARCHAR(100) PRIMARY KEY, -- 카테고리명
+   C_ITEM VARCHAR(3000) NOT NULL
+);
+
+-- 품목 정보 테이블 - 인덱스(PK), 카테고리(FK), 품목명, 품목설명, 품목가격,총 수량
+CREATE TABLE SUBJECT_INFO(
+   S_INDEX INT AUTO_INCREMENT PRIMARY KEY, -- 인덱스
+   S_CATE VARCHAR(100) NOT NULL, -- 카테고리
+   CONSTRAINT FK_S_CATE FOREIGN KEY(S_CATE) REFERENCES CATEGORY_MANAGEMENT(C_NAME),
+   S_NAME VARCHAR(100) NOT NULL, -- 품목명
+   S_INFO VARCHAR(100) NOT NULL, -- 품목 설명
+   S_IMAGE VARCHAR(100), -- 품목 사진
+   S_PRICE INT NOT NULL, -- 품목 가격
+   S_CNT INT DEFAULT 0 -- 총 수량
+);
+
+-- 장바구니 - 아이디, 품목, 수량 
+CREATE TABLE CART_LIST(
+   CL_ID VARCHAR(20) NOT NULL, -- 회원 아이디
+   CONSTRAINT FK_CL_ID FOREIGN KEY(CL_ID) REFERENCES MEMBER_MANAGEMENT(M_ID),
+   CL_ITEM INT NOT NULL, -- 품목 인덱스
+   CONSTRAINT FK_CL_ITEM FOREIGN KEY(CL_ITEM) REFERENCES SUBJECT_INFO(S_INDEX),
+   CL_CNT INT NOT NULL -- 담은 수량
+);
+
+-- 가맹점 테이블 - 매장번호, 아이디(FK), 전화번호, 영업일, 영업시간, 영업정보
+CREATE TABLE FRANCHISEE_MANAGEMENT (
+   F_INDEX INT AUTO_INCREMENT PRIMARY KEY, -- 매장 인덱스
+	F_ID VARCHAR(100) NOT NULL, -- 아이디
+   CONSTRAINT FK_F_ID FOREIGN KEY (F_ID) REFERENCES member_management (M_ID),
+   F_PHONE VARCHAR(50), -- 전화번호
+   F_DAY VARCHAR(1000), -- 운영요일
+   F_TIME VARCHAR(1000), -- 운영시간
+   F_INFO VARCHAR(3000) -- 영업정보
+)
+
+-- 주문내역 테이블 - 주문번호, 품목인덱스(FK), 수량, 주문자아이디(FK), 주문일시, 결제정보,  매장인덱스(FK), 수령 상태
+CREATE TABLE ORDER_INFO(
+	OI_NUM VARCHAR(20) NOT NULL, -- 주문번호
+	OI_ITEM INT NOT NULL, -- 상품인덱스
+	CONSTRAINT FK_OI_ITEM FOREIGN KEY(OI_ITEM) REFERENCES SUBJECT_INFO(S_INDEX),
+	OI_CNT INT NOT NULL, -- 주문수량
+	OI_MID VARCHAR(20) NOT NULL, -- 주문자아이디
+	CONSTRAINT FK_OI_MID FOREIGN KEY(OI_MID) REFERENCES MEMBER_MANAGEMENT(M_ID),
+	OI_DATE DATETIME DEFAULT SYSDATE(), -- 주문일시
+	OI_INFO VARCHAR(100), -- 결제정보
+	OI_FID INT NOT NULL, -- 픽업매장인덱스
+	CONSTRAINT FK_OI_FID FOREIGN KEY(OI_FID) REFERENCES FRANCHISEE_MANAGEMENT(F_INDEX),
+	OI_SORT INT DEFAULT 1 -- 수령상태(1:주문접수, 2:상품준비중, 3:매장배송중, 4:픽업대기, 0:수령완료(종료))
+);

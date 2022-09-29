@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+	<Resource
+		name="odos"
+		auth="Container"
+		type="javax.sql.DataSource"
+		driverClassName="org.mariadb.jdbc.Driver"
+		url="jdbc:mariadb://osjpc.iptime.org:523/odos_db"
+		username="odos_user"
+		password="1234"
+	 />
+</Context>
